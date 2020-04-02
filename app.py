@@ -42,6 +42,14 @@ schema = {
      "required": ["exporter", "target"]
 }
 
+delete_schema = {
+     "type": "object",
+     "properties": {
+         "exporter": {"type": "string"}
+     },
+     "required": ["exporter"]
+}
+
 # class IndexPage(Resource):
 #     def get(self):
 #         return {"message": "Need Web UI, Please add UI support https://github.com/narate/prom-file-sd"}
@@ -112,18 +120,17 @@ class PromTargets(Resource):
     def delete(self):
         body = request.get_json()
         try:
-            validate(body, schema)
+            validate(body, delete_schema)
         except:
             return {
-                    'message': 'Input data invalid or miss some value, required: {}'.format(schema['required'])
+                    'message': 'Input data invalid or miss some value, required: {}'.format(delete_schema['required'])
                 }, 400
         
         client = MongoClient(MONGO_HOST, MONGO_PORT)
         db = client.prom
         col = db.targets
         delete_proto = {
-            'exporter': body['exporter'],
-            'target': body['target']
+            'exporter': body['exporter']
         }
         find_proto = {
             'exporter': body['exporter']
