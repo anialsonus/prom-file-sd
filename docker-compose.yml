@@ -16,7 +16,7 @@ services:
   api:
     depends_on:
       - db
-    image: ci.arenadata.io/adcm_cluster_prometheus/prom-file-sd:v0.1
+    image: ci.arenadata.io/adcm_cluster_prometheus/prom-file-sd:v0.4
     ports:
       - 19216:19216
     volumes: 

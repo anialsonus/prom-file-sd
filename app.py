@@ -35,21 +35,21 @@ def unauthorized():
 schema = {
      "type": "object",
      "properties": {
-         "host_id": {"type": "integer"},
+         "zone": {"type": "string"},
          "exporter": {"type": "string"},
          "target": {"type": "string"},
          "labels": {"type": "object"}
      },
-     "required": ["host_id", "exporter", "target"]
+     "required": ["zone", "exporter", "target"]
 }
 
 delete_schema = {
      "type": "object",
      "properties": {
-         "host_id": {"type": "integer"},
+         "zone": {"type": "string"},
          "exporter": {"type": "string"}
      },
-     "required": ["host_id", "exporter"]
+     "required": ["zone", "exporter"]
 }
 
 # class IndexPage(Resource):
@@ -66,7 +66,7 @@ class PromTargets(Resource):
         col = db.targets
         targets = []
         for target in col.find():
-            targets.append({'host_id': target['host_id'], 'exporter': target['exporter'], 'target': target['target'],
+            targets.append({'zone': target['zone'], 'exporter': target['exporter'], 'target': target['target'],
                             'labels': target.get('labels', {})})
         return {'targets': targets}
     
@@ -84,18 +84,18 @@ class PromTargets(Resource):
         col = db.targets
         labels = body.get('labels', {})
         result = {
-            'host_id': body['host_id'],
+            'zone': body['zone'],
             'exporter': body['exporter'],
             'target': body['target'],
             'labels': labels
         }
         replace_proto = {
-            'host_id': body['host_id'],
+            'zone': body['zone'],
             'exporter': body['exporter'],
             'target': body['target']
         }
         find_proto = {
-            'host_id': body['host_id'],
+            'zone': body['zone'],
             'exporter': body['exporter']
         }
         metrics_path = labels.get('__metrics_path__')
@@ -136,11 +136,11 @@ class PromTargets(Resource):
         db = client.prom
         col = db.targets
         delete_proto = {
-            'host_id': body['host_id'],
+            'zone': body['zone'],
             'exporter': body['exporter']
         }
         find_proto = {
-            'host_id': body['host_id'],
+            'zone': body['zone'],
             'exporter': body['exporter']
         }
         col.delete_one(delete_proto)
