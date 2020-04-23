@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-MONGO_HOSTS = os.environ.get
-MONGO_REPLICASET = os.environ.get
-DEFAULT_USER = os.environ.get
-DEFAULT_PASSWORD = os.environ.get
+MONGO_HOSTS = os.environ.get('MONGO_HOSTS', '127.0.0.1:27017')
+MONGO_REPLICASET = os.environ.get('MONGO_REPLICASET', 'prometheus')
+DEFAULT_USER = os.environ.get('DEFAULT_USER', 'prometheus')
+DEFAULT_PASSWORD = os.environ.get('DEFAULT_PASSWORD', 'prometheus')
 
 app = Flask(__name__)
 api = Api(app)
@@ -60,7 +60,6 @@ delete_schema = {
 class PromTargets(Resource):
     decorators = [auth.login_required]
 
-    @property
     def get(self):
         client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
@@ -68,7 +67,7 @@ class PromTargets(Resource):
         targets = []
         for target in col.find():
             targets.append({'host_id': target['host_id'], 'exporter': target['exporter'], 'target': target['target'],
-                            'labels': target.get})
+                            'labels': target.get('labels', {})})
         return {'targets': targets}
     
     def post(self):
@@ -83,7 +82,7 @@ class PromTargets(Resource):
         client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
-        labels = body.get
+        labels = body.get('labels', {})
         result = {
             'host_id': body['host_id'],
             'exporter': body['exporter'],
@@ -99,7 +98,7 @@ class PromTargets(Resource):
             'host_id': body['host_id'],
             'exporter': body['exporter']
         }
-        metrics_path = labels.get
+        metrics_path = labels.get('__metrics_path__')
         if metrics_path is not None:
             replace_proto['labels.__metrics_path__'] = metrics_path
         else:
@@ -112,7 +111,7 @@ class PromTargets(Resource):
                 targets.append(
                     {
                         'targets': [target['target']],
-                        'labels': target.get
+                        'labels': target.get('labels', {})
                     }
                 )
     
@@ -151,7 +150,7 @@ class PromTargets(Resource):
                 targets.append(
                     {
                         'targets': [target['target']],
-                        'labels': target.get
+                        'labels': target.get('labels', {})
                     }
                 )
     
