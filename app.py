@@ -35,12 +35,11 @@ def unauthorized():
 schema = {
      "type": "object",
      "properties": {
-         "zone": {"type": "string"},
          "exporter": {"type": "string"},
          "target": {"type": "string"},
          "labels": {"type": "object"}
      },
-     "required": ["zone", "exporter", "target"]
+     "required": ["exporter", "target", "labels"]
 }
 
 delete_schema = {
@@ -66,7 +65,7 @@ class PromTargets(Resource):
         col = db.targets
         targets = []
         for target in col.find():
-            targets.append({'zone': target['zone'], 'exporter': target['exporter'], 'target': target['target'],
+            targets.append({'exporter': target['exporter'], 'target': target['target'],
                             'labels': target.get('labels', {})})
         return {'targets': targets}
     
@@ -77,26 +76,24 @@ class PromTargets(Resource):
         except:
             return {
                     'message': 'Input data invalid or miss some value, required: {}'.format(schema['required'])
-                }, 400
+            }, 400
         
         client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
         labels = body.get('labels', {})
         result = {
-            'zone': body['zone'],
             'exporter': body['exporter'],
             'target': body['target'],
             'labels': labels
         }
         replace_proto = {
-            'zone': body['zone'],
             'exporter': body['exporter'],
             'target': body['target']
         }
         find_proto = {
-            'zone': body['zone'],
-            'exporter': body['exporter']
+            'exporter': body['exporter'],
+            'labels.zone': labels.get('zone')
         }
         metrics_path = labels.get('__metrics_path__')
         if metrics_path is not None:
@@ -136,12 +133,12 @@ class PromTargets(Resource):
         db = client.prom
         col = db.targets
         delete_proto = {
-            'zone': body['zone'],
-            'exporter': body['exporter']
+            'exporter': body['exporter'],
+            'labels.zone': body['zone']
         }
         find_proto = {
-            'zone': body['zone'],
-            'exporter': body['exporter']
+            'exporter': body['exporter'],
+            'labels.zone': body['zone']
         }
         col.delete_one(delete_proto)
         with open('/prom/conf/' + body['exporter'] + '.json', 'w') as f:
