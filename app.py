@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-MONGO_HOST = os.environ.get('MONGO_HOST', '127.0.0.1')
-MONGO_PORT = int(os.environ.get('MONGO_PORT', 27017))
-DEFAULT_USER = os.environ.get('DEFAULT_USER', 'prometheus')
-DEFAULT_PASSWORD = os.environ.get('DEFAULT_PASSWORD', 'prometheus')
+MONGO_HOSTS = os.environ.get
+MONGO_REPLICASET = os.environ.get
+DEFAULT_USER = os.environ.get
+DEFAULT_PASSWORD = os.environ.get
 
 app = Flask(__name__)
 api = Api(app)
@@ -35,19 +35,21 @@ def unauthorized():
 schema = {
      "type": "object",
      "properties": {
+         "host_id": {"type": "integer"},
          "exporter": {"type": "string"},
          "target": {"type": "string"},
          "labels": {"type": "object"}
      },
-     "required": ["exporter", "target"]
+     "required": ["host_id", "exporter", "target"]
 }
 
 delete_schema = {
      "type": "object",
      "properties": {
+         "host_id": {"type": "integer"},
          "exporter": {"type": "string"}
      },
-     "required": ["exporter"]
+     "required": ["host_id", "exporter"]
 }
 
 # class IndexPage(Resource):
@@ -58,13 +60,15 @@ delete_schema = {
 class PromTargets(Resource):
     decorators = [auth.login_required]
 
+    @property
     def get(self):
-        client = MongoClient(MONGO_HOST, MONGO_PORT)
+        client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
         targets = []
         for target in col.find():
-            targets.append({'exporter': target['exporter'], 'target': target['target'], 'labels': target.get('labels', {})})
+            targets.append({'host_id': target['host_id'], 'exporter': target['exporter'], 'target': target['target'],
+                            'labels': target.get})
         return {'targets': targets}
     
     def post(self):
@@ -76,23 +80,26 @@ class PromTargets(Resource):
                     'message': 'Input data invalid or miss some value, required: {}'.format(schema['required'])
                 }, 400
         
-        client = MongoClient(MONGO_HOST, MONGO_PORT)
+        client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
-        labels = body.get('labels', {})
+        labels = body.get
         result = {
+            'host_id': body['host_id'],
             'exporter': body['exporter'],
             'target': body['target'],
             'labels': labels
         }
         replace_proto = {
+            'host_id': body['host_id'],
             'exporter': body['exporter'],
             'target': body['target']
         }
         find_proto = {
+            'host_id': body['host_id'],
             'exporter': body['exporter']
         }
-        metrics_path = labels.get('__metrics_path__')
+        metrics_path = labels.get
         if metrics_path is not None:
             replace_proto['labels.__metrics_path__'] = metrics_path
         else:
@@ -105,7 +112,7 @@ class PromTargets(Resource):
                 targets.append(
                     {
                         'targets': [target['target']],
-                        'labels': target.get('labels', {})
+                        'labels': target.get
                     }
                 )
     
@@ -126,13 +133,15 @@ class PromTargets(Resource):
                     'message': 'Input data invalid or miss some value, required: {}'.format(delete_schema['required'])
                 }, 400
         
-        client = MongoClient(MONGO_HOST, MONGO_PORT)
+        client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
         delete_proto = {
+            'host_id': body['host_id'],
             'exporter': body['exporter']
         }
         find_proto = {
+            'host_id': body['host_id'],
             'exporter': body['exporter']
         }
         col.delete_one(delete_proto)
@@ -142,7 +151,7 @@ class PromTargets(Resource):
                 targets.append(
                     {
                         'targets': [target['target']],
-                        'labels': target.get('labels', {})
+                        'labels': target.get
                     }
                 )
     
