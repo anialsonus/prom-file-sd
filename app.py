@@ -37,9 +37,10 @@ schema = {
      "properties": {
          "exporter": {"type": "string"},
          "target": {"type": "string"},
+         "inventory_hostname": {"type": "string"},
          "labels": {"type": "object"}
      },
-     "required": ["exporter", "target", "labels"]
+     "required": ["exporter", "target", "inventory_hostname", "labels"]
 }
 
 delete_schema = {
@@ -47,9 +48,10 @@ delete_schema = {
      "properties": {
          "zone": {"type": "string"},
          "exporter": {"type": "string"},
-         "target": {"type": "string"}
+         "target": {"type": "string"},
+         "inventory_hostname": {"type": "string"}
      },
-     "required": ["zone", "exporter", "target"]
+     "required": ["zone", "exporter", "target", "inventory_hostname"]
 }
 
 # class IndexPage(Resource):
@@ -86,11 +88,13 @@ class PromTargets(Resource):
         result = {
             'exporter': body['exporter'],
             'target': body['target'],
+            'inventory_hostname': body['inventory_hostname'],
             'labels': labels
         }
         replace_proto = {
             'exporter': body['exporter'],
-            'target': body['target']
+            'target': body['target'],
+            'inventory_hostname': body['inventory_hostname']
         }
         find_proto = {
             'exporter': body['exporter'],
@@ -136,7 +140,8 @@ class PromTargets(Resource):
         delete_proto = {
             'exporter': body['exporter'],
             'labels.zone': body['zone'],
-            'target': body['target']
+            'target': body['target'],
+            'inventory_hostname': body['inventory_hostname']
         }
         find_proto = {
             'exporter': body['exporter'],
