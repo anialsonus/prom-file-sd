@@ -46,9 +46,10 @@ delete_schema = {
      "type": "object",
      "properties": {
          "zone": {"type": "string"},
-         "exporter": {"type": "string"}
+         "exporter": {"type": "string"},
+         "target": {"type": "string"}
      },
-     "required": ["zone", "exporter"]
+     "required": ["zone", "exporter", "target"]
 }
 
 # class IndexPage(Resource):
@@ -134,7 +135,8 @@ class PromTargets(Resource):
         col = db.targets
         delete_proto = {
             'exporter': body['exporter'],
-            'labels.zone': body['zone']
+            'labels.zone': body['zone'],
+            'target': body['target']
         }
         find_proto = {
             'exporter': body['exporter'],
