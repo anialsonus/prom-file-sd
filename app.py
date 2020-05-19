@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, make_response
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from flask_httpauth import HTTPBasicAuth
 from jsonschema import validate
 from pymongo import MongoClient
@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-MONGO_HOSTS = os.environ.get('MONGO_HOSTS', '127.0.0.1:27017')
 MONGO_REPLICASET = os.environ.get('MONGO_REPLICASET', 'prometheus')
 DEFAULT_USER = os.environ.get('DEFAULT_USER', 'prometheus')
 DEFAULT_PASSWORD = os.environ.get('DEFAULT_PASSWORD', 'prometheus')
@@ -37,21 +36,9 @@ schema = {
      "properties": {
          "exporter": {"type": "string"},
          "target": {"type": "string"},
-         "inventory_hostname": {"type": "string"},
          "labels": {"type": "object"}
      },
-     "required": ["exporter", "target", "inventory_hostname", "labels"]
-}
-
-delete_schema = {
-     "type": "object",
-     "properties": {
-         "zone": {"type": "string"},
-         "exporter": {"type": "string"},
-         "target": {"type": "string"},
-         "inventory_hostname": {"type": "string"}
-     },
-     "required": ["zone", "exporter", "target", "inventory_hostname"]
+     "required": ["exporter", "target", "labels"]
 }
 
 # class IndexPage(Resource):
@@ -63,13 +50,26 @@ class PromTargets(Resource):
     decorators = [auth.login_required]
 
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('zone', type=str)
+        parser.add_argument('exporter', type=str)
+        args = parser.parse_args()
+
         client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
+        find_proto = {
+            'exporter': args['exporter'],
+            'labels.zone': args['zone']
+        }
         targets = []
-        for target in col.find():
-            targets.append({'exporter': target['exporter'], 'target': target['target'],
-                            'labels': target.get('labels', {})})
+        for target in col.find(find_proto, projection={'_id': False}):
+            targets.append(
+                {
+                    'targets': [target['target']],
+                    'labels': target.get('labels', {})
+                }
+            )
         return {'targets': targets}
     
     def post(self):
@@ -88,13 +88,13 @@ class PromTargets(Resource):
         result = {
             'exporter': body['exporter'],
             'target': body['target'],
-            'inventory_hostname': body['inventory_hostname'],
             'labels': labels
         }
         replace_proto = {
             'exporter': body['exporter'],
             'target': body['target'],
-            'inventory_hostname': body['inventory_hostname']
+            'labels.zone': labels.get('zone'),
+            'labels.inventory_hostname': labels.get('inventory_hostname')
         }
         find_proto = {
             'exporter': body['exporter'],
@@ -128,24 +128,25 @@ class PromTargets(Resource):
     def delete(self):
         body = request.get_json()
         try:
-            validate(body, delete_schema)
+            validate(body, schema)
         except:
             return {
-                    'message': 'Input data invalid or miss some value, required: {}'.format(delete_schema['required'])
+                    'message': 'Input data invalid or miss some value, required: {}'.format(schema['required'])
                 }, 400
         
         client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
         db = client.prom
         col = db.targets
+        labels = body.get('labels', {})
         delete_proto = {
             'exporter': body['exporter'],
-            'labels.zone': body['zone'],
             'target': body['target'],
-            'inventory_hostname': body['inventory_hostname']
+            'labels.zone': labels.get('zone'),
+            'labels.inventory_hostname': labels.get('inventory_hostname')
         }
         find_proto = {
             'exporter': body['exporter'],
-            'labels.zone': body['zone']
+            'labels.zone': labels.get('zone')
         }
         col.delete_one(delete_proto)
         with open('/prom/conf/' + body['exporter'] + '.json', 'w') as f:
@@ -162,9 +163,6 @@ class PromTargets(Resource):
             f.flush()
             os.fsync(f.fileno())
         return None, 204
-
-# api.add_resource(IndexPage, '/')
-
 
 api.add_resource(PromTargets, '/targets')
 
