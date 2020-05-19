@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+MONGO_HOSTS = os.environ.get('MONGO_HOSTS', 'prometheus')
 MONGO_REPLICASET = os.environ.get('MONGO_REPLICASET', 'prometheus')
 DEFAULT_USER = os.environ.get('DEFAULT_USER', 'prometheus')
 DEFAULT_PASSWORD = os.environ.get('DEFAULT_PASSWORD', 'prometheus')
