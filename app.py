@@ -90,12 +90,19 @@ class PromTargets(Resource):
             'target': body['target'],
             'labels': labels
         }
-        replace_proto = {
-            'exporter': body['exporter'],
-            'target': body['target'],
-            'labels.zone': labels.get('zone'),
-            'labels.inventory_hostname': labels.get('inventory_hostname')
-        }
+        if 'blackbox' in body['exporter']:
+            replace_proto = {
+                'exporter': body['exporter'],
+                'target': body['target'],
+                'labels.zone': labels.get('zone'),
+                'labels.inventory_hostname': labels.get('inventory_hostname')
+            }
+        else:
+            replace_proto = {
+                'exporter': body['exporter'],
+                'labels.zone': labels.get('zone'),
+                'labels.inventory_hostname': labels.get('inventory_hostname')
+            }
         find_proto = {
             'exporter': body['exporter'],
             'labels.zone': labels.get('zone')
