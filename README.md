@@ -21,6 +21,7 @@ curl -H 'Content-Type: application/json' \
     http://localhost:5000/targets \
     -d '{
     "target": "localhost:9090",
+    "exporter": "postgres_exporter"
     "labels": {
         "env": "prom",
         "job": "prom"
@@ -33,6 +34,13 @@ curl -H 'Content-Type: application/json' \
 ```
 curl http://localhost:5000/targets
 ```
+
+args:
+- exporter, name of exporter, if "all" - return all dataset
+
+- "http_sd_config=true", default False - return json for [prometheus http_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config)
+
+- limit, default 0 = no limit - limit number of targets in result
 
 ### Delete target
 
