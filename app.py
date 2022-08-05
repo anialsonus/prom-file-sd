@@ -54,6 +54,8 @@ class PromTargets(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('zone', type=str)
         parser.add_argument('exporter', type=str)
+        parser.add_argument('limit', type=int, default=0)
+        parser.add_argument('http_sd_config', type=bool, default=False)
         args = parser.parse_args()
 
         client = MongoClient([MONGO_HOSTS], replicaset=MONGO_REPLICASET)
@@ -63,14 +65,21 @@ class PromTargets(Resource):
             'exporter': args['exporter'],
             'labels.zone': args['zone']
         }
+        if args['exporter']=='all':
+            find_proto = {}
         targets = []
-        for target in col.find(find_proto, projection={'_id': False}):
+        kwargs = {}
+        if args["limit"] !=0:
+            kwargs = { "limit" : args["limit"]  , "sort" : [( "targets", 1 )] }
+        for target in col.find(find_proto , projection={'_id': False}, **kwargs ):
             targets.append(
                 {
                     'targets': [target['target']],
                     'labels': target.get('labels', {})
                 }
             )
+        if args['http_sd_config']:
+            return targets
         return {'targets': targets}
     
     def post(self):
